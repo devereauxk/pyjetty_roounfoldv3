@@ -1,67 +1,77 @@
 # pyjetty
+### with RooUnfold v3 so you can do 3D unfolding easy
 
-- meant as an extension of [https://github.com/matplo/heppy](https://github.com/matplo/heppy)
+assuming that this is being done on perlmutter
 
-# quick start with heppy in a docker
+adapted from https://github.com/alicernc/info/blob/main/heppy_at_perlmutter.md
 
-- an example (you probably want to start in a different directory)...
+## compile heppy with RooUnfold v3
+
 ```
-cd /tmp
+workdir=/global/cfs/cdirs/alice/$USER/mypyjetty_roounfold
+mkdir -p $workdir
+cd $workdir
+## module load python/3.11 - not needed we will use systems python3 - change 5-Oct-2023
+python3 -m venv pyjettyenv_roounfold
+source pyjettyenv_roounfold/bin/activate
+python -m pip install --upgrade pip
+python -m pip install numpy tqdm pyyaml
+
+# load some preinstalled packages
+## module use /global/cfs/cdirs/alice/heppy_soft/yasp/software/modules - gsl not present - change 5-Oct-2023
+module use /global/cfs/cdirs/alice/heppy_soft/05-11-2023/yasp/software/modules
+module load cmake gsl root/6.28.00 HepMC2/2.06.11 LHAPDF6/6.5.3 pcre2/default swig/4.1.1 HepMC3/3.2.5
+
 git clone https://github.com/matplo/heppy.git
-./heppy/docker/heppy/run.sh
-cd /host/tmp
-git clone https://github.com/matplo/pyjetty.git
-heppy_load
-./pyjetty/cpptools/build.sh --tenngen --tglaubermc
+./heppy/external/fastjet/build.sh
+./heppy/external/pythia8/build.sh
+./heppy/external/roounfold/build.sh --v3
+# the v3 tag here ensures you get RooUnfold v3
+./heppy/cpptools/build.sh
+
+# note: use --clean when recompiling...
+# like that: ./heppy/external/fastjet/build.sh --clean
+# ...
 ```
 
-- run an example within the docker `./pyjetty/pyjetty/examples/pythia_gen_fastjet_lund_test.py`
-- some info/tips on the heppy docker at https://github.com/matplo/heppy/tree/master/docker/heppy
-- next time around it is sufficient to load only the pyjetty:
+## compile pyjetty
+
+I tried to clone and compile with Wenqing's pyjetty here, but for some reason it disagrees. Since `ecorrel` files necessary for EEC unfolding, I just copy those over to Mateusz's pyjetty before compiling...
 ```
-/tmp/heppy/docker/heppy/run.sh
-module use /host/tmp/pyjetty/modules
-module load pyjetty
+workdir=/global/cfs/cdirs/alice/$USER/mypyjetty
+cd ${workdir}
+module use ${workdir}/heppy/modules
+module load heppy
+# two lines below if new shell/terminal
+module use /global/cfs/cdirs/alice/heppy_soft/05-11-2023/yasp/software/modules
+module load cmake gsl root/6.28.00 HepMC2/2.06.11 LHAPDF6/6.5.3 pcre2/default swig/4.1.1 HepMC3/3.2.5
+git clone git@github.com:matplo/pyjetty.git
+./pyjetty/cpptools/build.sh --tglaubermc --tenngen
 ```
 
-- note the useful `pyjetty_cd` after the pyjetty module is loaded
-
-# recommended build/setup from source
-
- - install heppy and `export HEPPY_DIR=<path to heppy>`
- - execute `$HEPPY_DIR/scripts/pipenv_heppy.sh run <where pyjetty>/cpptools/build.sh` - that's it...
-
- - alternatively load the heppy module (from in heppy/modules)
-
-# modules
-
-- modules/pyjetty contains an env module
-
-# example python script
+## ~/.bashrc
 
 ```
-module use <where pyjetty>/modules
-module load pyjetty/1.0
-pyjettypython $PYJETTY_DIR/cpptools/tests/pythia_gen_fj_lund_test.py
+function pyjetty_w_roounfoldv3_load()
+{
+        workdir=/global/cfs/cdirs/alice/$USER/mypyjetty_roounfold
+        source $workdir/pyjettyenv_roounfold/bin/activate
+        module use /global/cfs/cdirs/alice/heppy_soft/05-11-2023/yasp/software/modules
+        module load cmake gsl root/6.28.00 HepMC2/2.06.11 LHAPDF6/6.5.3 pcre2/default swig/4.1.1 HepMC3/3.2.5
+        module use $workdir/pyjetty/modules
+        module load pyjetty
+
+        module list
+}
+export -f pyjetty_w_roounfoldv3_load
 ```
-notes/tips: use a new shell after building; no need to load or set heppy the pyjetty module should take care of things
 
-# add/extend c++ (swig) to python
+## testing the implementation
 
-- in the `cpptools/src` directory create your code/directory
-- edit `cpptools/src/pyjetty.i`, `cpptools/src/CMakeLists.txt` as needed
-- run `./cpptools/scripts/build_cpptools.sh`
+```
+pyjetty_w_roounfoldv3_load
+workdir=/global/cfs/cdirs/alice/$USER/mypyjetty_roounfold
+cd $workdir
+$PYJETTY_DIR/pyjetty/examples/pythia_gen_fastjet_lund_test.py
+```
 
-# more functionality?
-
-- TennGen background generator (via https://github.com/matplo/TennGen)
--- install with `$HEPPY_DIR/scripts/pipenv_heppy.sh run <where pyjetty>/cpptools/build.sh --tenngen`
-- TGlauberMC - a Glauber MC implementation (via https://github.com/matplo/TGlauberMC)
--- install with `$HEPPY_DIR/scripts/pipenv_heppy.sh run <where pyjetty>/cpptools/build.sh --tglaubermc`
-
-Note: to install both use both flags: `--tenngen --tglaubermc`
-
-# contributing
-
-Please fork and make a pull request.
-Please let us know if you are using this code - we are very much open for collaboration - email us at heppy@lbl.gov
