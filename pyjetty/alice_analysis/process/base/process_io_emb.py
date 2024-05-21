@@ -31,7 +31,7 @@ class ProcessIO_Emb(common_base.CommonBase):
   # Constructor
   #---------------------------------------------------------------
   def __init__(self, file_list='PbPb_file_list.txt', track_tree_name='tree_Particle',
-               min_cent=0., max_cent=10., is_pp = False, use_ev_id_ext = True,
+               min_cent=0., max_cent=10., is_pp = False, use_ev_id_ext = False, # changed to False since PbPb files dont have it?! idk 
                m=0.1396, remove_used_file=True, **kwargs):
     super(ProcessIO_Emb, self).__init__(**kwargs)
     

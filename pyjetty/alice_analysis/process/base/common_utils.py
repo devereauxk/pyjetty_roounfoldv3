@@ -18,14 +18,10 @@ import uproot
 import pandas
 import numpy as np
 import ROOT
-from silx.io.dictdump import dicttoh5, h5todict
 
 # Fastjet via python (from external library fjpydev)
-try:
-    import fastjet as fj
-    import fjext
-except ImportError:
-    pass
+import fastjet as fj
+import fjext
 
 # Base class
 from pyjetty.alice_analysis.process.base import common_base
@@ -44,13 +40,30 @@ class CommonUtils(common_base.CommonBase):
   # from observable config block
   #---------------------------------------------------------------
   def obs_settings(self, observable, obs_config_dict, obs_subconfig_list):
-
+    print('using wenqing code for utils')
     if 'subjet_z' in observable:
       return [obs_config_dict[name]['subjet_R'] for name in obs_subconfig_list]
     elif observable == 'jet_axis':
       return [obs_config_dict[name]['axis'] for name in obs_subconfig_list]
     elif observable == 'ang':
       return [obs_config_dict[name]['beta'] for name in obs_subconfig_list]
+    elif observable == 'jet_ENC_RL':
+      return [obs_config_dict[name]['trk_thrd'] for name in obs_subconfig_list]
+    elif observable == 'jet_EEC_noweight_RL':
+      return [obs_config_dict[name]['trk_thrd'] for name in obs_subconfig_list]
+    elif observable == 'jet_EEC_weight2_RL':
+      return [obs_config_dict[name]['trk_thrd'] for name in obs_subconfig_list]
+    elif observable == 'jet_pair_dist':
+      return [obs_config_dict[name]['trk_thrd'] for name in obs_subconfig_list]
+    elif observable == 'jet_EEC_detail_RL':
+      return [obs_config_dict[name]['trk_thrd'] for name in obs_subconfig_list]
+    elif observable == 'jet_EEC_detail_noweight_RL':
+      return [obs_config_dict[name]['trk_thrd'] for name in obs_subconfig_list]
+    elif observable == 'jet_pt':
+      return [obs_config_dict[name]['trk_thrd'] for name in obs_subconfig_list]
+    elif observable in ['trk_pt', 'jet-trk_shape', 'jet-trk_ptprofile', 'jet_pt_JetPt', 'trk_pt_TrkPt', 'jet-trk_shape_RL_TrkPt_JetPt', 'jet-trk_shape_RL_z_JetPt', 
+    'jet-trk_ptprofile_RL_TrkPt_JetPt', 'jet-trk_ptprofile_RL_z_JetPt']:
+      return [obs_config_dict[name]['trk_thrd'] for name in obs_subconfig_list]
 
     # Else observable not implemented
     return [None for _ in obs_subconfig_list]
@@ -138,23 +151,3 @@ class CommonUtils(common_base.CommonBase):
     
     string = str(text)
     return string.replace('.', '')
-
-  #---------------------------------------------------------------
-  # Write nested dictionary of ndarray to hdf5 file
-  # Note: all keys should be strings
-  #---------------------------------------------------------------
-  def write_data(self, results, output_dir, filename = 'results.h5'):
-      print(f'Writing results to {output_dir}/{filename}...')
-      dicttoh5(results, os.path.join(output_dir, filename), overwrite_data=True)
-      print('done.')
-      print()
-  
-  #---------------------------------------------------------------
-  # Read dictionary of ndarrays from hdf5
-  # Note: all keys should be strings
-  #---------------------------------------------------------------
-  def read_data(self, input_file):
-      print(f'Loading results from {input_file}...')
-      results = h5todict(input_file)
-      print('done.')
-      return results
