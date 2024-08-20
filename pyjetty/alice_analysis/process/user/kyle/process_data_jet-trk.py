@@ -60,12 +60,12 @@ class ProcessData_JetTrk(process_data_base.ProcessDataBase):
 
     # define binnings
     if self.is_pp:
-      n_bins = [12, 15, 7] # WARNING RooUnfold seg faults if too many bins used
+      n_bins = [15, 15, 7] # WARNING RooUnfold seg faults if too many bins used
       binnings = [np.linspace(0,0.2,n_bins[0]+1), \
                   np.array([0.15, 0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20]).astype(float), \
                   np.array([10, 20, 40, 60, 80, 100, 120, 140]).astype(float) ]
     else:
-      n_bins = [12, 15, 8] # WARNING RooUnfold seg faults if too many bins used
+      n_bins = [15, 15, 8] # WARNING RooUnfold seg faults if too many bins used
       binnings = [np.linspace(0,0.2,n_bins[0]+1), \
                   np.array([0.15, 0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20]).astype(float), \
                   np.array([20, 40, 60, 80, 100, 120, 140, 160, 200]).astype(float) ]
@@ -220,8 +220,8 @@ class ProcessData_JetTrk(process_data_base.ProcessDataBase):
 
     for c in c_select:
       
-      # cut on 0.15 track pT again so ghosts not filled 
-      if c.perp() < 0.15: continue
+      # cut on track pT again so ghosts not filled, and to reduce background
+      if c.perp() < 1: continue
 
       rl = self.calculate_distance(jet, c)
 
@@ -260,11 +260,13 @@ class ProcessData_JetTrk(process_data_base.ProcessDataBase):
   def analyze_perp_cones(self, jet, jets_pt_corrected, fj_particles):
     # do it for both + and - 90 deg bc wtf not, i guess the average will be a better estimate
       
+    # effective jetR cone size calculated st cones have matching AREA to signal jet
     jetR_eff = np.sqrt(jet.area() / np.pi)
 
     perp_jet1 = fj.PseudoJet()
-    perp_jet1.reset_PtYPhiM(jet.perp(), jet.rap(), jet.phi() + np.pi/2, jet.m())
+    perp_jet1.reset_PtYPhiM(jet.perp(), jet.rap(), jet.phi() + np.pi/2, jet.m()) # use uncorrected jet pt since we just want the same eta direction
     parts_in_perpcone1 = self.find_parts_around_jet(fj_particles, perp_jet1, jetR_eff) # jet R
+    # only look at particles within radius of effective cone size
 
     perp_jet2 = fj.PseudoJet()
     perp_jet2.reset_PtYPhiM(jet.perp(), jet.rap(), jet.phi() - np.pi/2, jet.m())
@@ -280,7 +282,9 @@ class ProcessData_JetTrk(process_data_base.ProcessDataBase):
     # perfect circle around jet axis
     cone_parts = fj.vectorPJ()
     for part in parts:
-      if self.calculate_distance(jet, part):
+      # must apply same cuts to these particles as you do with the signal jet!!
+      if part.perp() < 1: continue
+      if self.calculate_distance(jet, part) < cone_R:
         cone_parts.push_back(part)
     
     return cone_parts

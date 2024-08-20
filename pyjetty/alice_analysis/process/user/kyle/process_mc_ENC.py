@@ -133,9 +133,9 @@ class ProcessMC_ENC(process_mc_base.ProcessMCBase):
     h1_gen = ROOT.TH1D("gen1D", "gen1D", n_bins[2], binnings[2])
     setattr(self, "gen1D", h1_gen)
 
-    response = ROOT.RooUnfoldResponse(h3_reco, h3_gen)
+    response = ROOT.RooUnfoldResponse(h3_reco, h3_gen, "response", "response")
     setattr(self, "response", response)
-    response1D = ROOT.RooUnfoldResponse(h1_reco, h1_gen)
+    response1D = ROOT.RooUnfoldResponse(h1_reco, h1_gen, "response1D", "response1D")
     setattr(self, "response1D", response1D)
 
     # for purity correction
@@ -209,6 +209,7 @@ class ProcessMC_ENC(process_mc_base.ProcessMCBase):
 
         getattr(self, "reco1D").Fill(det_match_pt, self.pt_hat)
         getattr(self, "gen1D").Fill(t_jet.perp(), self.pt_hat)
+        getattr(self, "response1D").Fill(det_match_pt, t_jet.perp(), self.pt_hat)
 
         self.fill_matched_jet_histograms(det_match, t_jet, det_match_pt)
         if det_match.perp() > myptselector : n_matches += 1
